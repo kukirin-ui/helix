@@ -83,7 +83,7 @@ fn find_pair(
     let pos = doc.char_to_byte(pos_) as u32;
 
     let root = syntax.tree_for_byte_range(pos, pos).root_node();
-    let mut node = root.descendant_for_byte_range(pos, pos)?;
+    let mut node = root.descendant_for_byte_range(pos, pos + 1)?;
 
     loop {
         if node.is_named() && node.child_count() >= 2 {
@@ -316,6 +316,7 @@ fn as_char(doc: RopeSlice, node: &Node) -> Option<(usize, char)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::{config::default_lang_loader, Rope};
 
     #[test]
     fn find_matching_bracket_empty_file() {
@@ -349,5 +350,28 @@ mod tests {
         assert("(prev line\n ) (middle) ( \n next line)", 0, 12);
         assert("(prev line\n ) (middle) ( \n next line)", 14, 21);
         assert("(prev line\n ) (middle) ( \n next line)", 23, 36);
+    }
+
+    #[test]
+    fn find_matching_bracket_after_adjacent_node() {
+        let loader = default_lang_loader();
+        let language = loader.language_for_name("typst").unwrap();
+        let text = Rope::from_str("#rect(width: 100%, stroke: stroke(dash: \"dotted\"))[\n\n]\n");
+        let syntax = Syntax::new(text.slice(..), language, &loader).unwrap();
+
+        let assert = |pos, expected| {
+            let actual = find_matching_bracket(&syntax, text.slice(..), pos);
+            assert_eq!(Some(expected), actual, "exact match from {pos}");
+            let actual = find_matching_bracket_fuzzy(&syntax, text.slice(..), pos);
+            assert_eq!(Some(expected), actual, "fuzzy match from {pos}");
+        };
+
+        // Each of these opening brackets directly follows another node
+        assert(5, 49);
+        assert(33, 48);
+        assert(50, 53);
+        assert(49, 5);
+        assert(48, 33);
+        assert(53, 50);
     }
 }
