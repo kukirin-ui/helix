@@ -965,6 +965,20 @@ async fn match_bracket() -> anyhow::Result<()> {
                 #[]|]#
             "##},
         ),
+        // backwards from the closing brackets, with one selection on each
+        (
+            indoc! {r##"
+                #rect(width: 100%, radius: 5mm#[)|]#[
+
+                #(]|)#
+            "##},
+            "mm",
+            indoc! {r##"
+                #rect#[(|]#width: 100%, radius: 5mm)#([|)#
+
+                ]
+            "##},
+        ),
     ];
 
     for test in rust_tests {
