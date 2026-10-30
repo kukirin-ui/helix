@@ -83,7 +83,7 @@ fn find_pair(
     let pos = doc.char_to_byte(pos_) as u32;
 
     let root = syntax.tree_for_byte_range(pos, pos).root_node();
-    let mut node = root.descendant_for_byte_range(pos, pos)?;
+    let mut node = root.descendant_for_byte_range(pos, pos + 1)?;
 
     loop {
         if node.is_named() && node.child_count() >= 2 {
