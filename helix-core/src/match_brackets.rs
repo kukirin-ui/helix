@@ -414,4 +414,19 @@ mod tests {
         assert_eq!(Some(16), find_matching_bracket_fuzzy(&syntax, text, 14));
         assert_eq!(Some(23), find_matching_bracket(&syntax, text, 21));
     }
+
+    #[test]
+    fn test_find_matching_bracket_multibyte() {
+        // multi-byte brackets from `BRACKETS`, as markup text right after a call
+        let loader = crate::config::default_lang_loader();
+        let language = loader.language_for_name("typst").unwrap();
+        let doc = crate::Rope::from_str("#f[x]（a «b» c）\n");
+        let syntax = Syntax::new(doc.slice(..), language, &loader).unwrap();
+        let text = doc.slice(..);
+
+        for (open, close) in [(5, 13), (8, 10)] {
+            assert_eq!(Some(close), find_matching_bracket(&syntax, text, open));
+            assert_eq!(Some(open), find_matching_bracket(&syntax, text, close));
+        }
+    }
 }
